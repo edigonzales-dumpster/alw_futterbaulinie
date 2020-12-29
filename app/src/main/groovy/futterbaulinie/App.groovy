@@ -29,7 +29,7 @@ Raster raster = geotiff.read("2594000_1230000_vegetation_uncompressed")
 // value 0 ist nicht gut, wird als NULL/nodata interpretiert?
 Raster reclassifiedRaster = raster.reclassify([
     [min:-9999, max:-9999, value: 2],
-    [min:0,     max:0,     value: 2],
+    [min:-9999, max:0,     value: 2],
     [min:0,     max:200,   value: 1]
 ])
 
@@ -51,5 +51,7 @@ layer.features.each { f ->
     
     }
 }
+
+// test: layer to file?
 
 println("Hallo Welt.")
