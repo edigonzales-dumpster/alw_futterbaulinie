@@ -26,10 +26,11 @@ File file = new File("/Users/stefan/Downloads/2594000_1230000_vegetation_uncompr
 GeoTIFF geotiff = new GeoTIFF(file)
 Raster raster = geotiff.read("2594000_1230000_vegetation_uncompressed")
 
-
+// value 0 ist nicht gut, wird als NULL/nodata interpretiert?
 Raster reclassifiedRaster = raster.reclassify([
-    [min:-9999,   max:0,     value: 2],
-    [min:0,       max:200,   value: 0]
+    [min:-9999, max:-9999, value: 2],
+    [min:0,     max:0,     value: 2],
+    [min:0,     max:200,   value: 1]
 ])
 
 File outFile = new File("/Users/stefan/Downloads/A_pa1.tif")
@@ -41,8 +42,14 @@ Layer layer = reclassifiedRaster.polygonLayer
 println layer.schema
 
 layer.features.each { f ->
-    println f.geom.toString()
+    
     println f.get("value").toString()
+    
+    if (f.get("value") < 2.0) {
+        println f.geom.toString()
+        println f.get("value").toString()
+    
+    }
 }
 
 println("Hallo Welt.")
