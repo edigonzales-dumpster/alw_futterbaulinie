@@ -1,10 +1,18 @@
 package futterbaulinie
 
+import geoscript.feature.Feature
+import geoscript.feature.Field
+import geoscript.filter.Filter
+import geoscript.geom.Geometry
 import geoscript.geom.Point
 import geoscript.layer.Format
 import geoscript.layer.GeoTIFF
 import geoscript.layer.Layer
 import geoscript.layer.Raster
+import geoscript.layer.Shapefile
+import geoscript.workspace.Directory
+import geoscript.workspace.GeoPackage
+import geoscript.workspace.Workspace
 
 /*
 class App {
@@ -18,9 +26,12 @@ class App {
 }
 */
 
+//Bemerkungen:
+// - 32bit und predictor=2 funktioniert nicht
+// - Reclassify: value=0 wird als nodata interpretiert?
+// - Namen von Shapefiles? Es wird der Name des Schemas (read-only) verwendet.
+// - Shapefile.dump() wird in QGIS nicht angezeigt. fid missing?
 
-//Point point = new Point(20,20)
-//println(point.buffer(10))
 
 File file = new File("/Users/stefan/Downloads/2594000_1230000_vegetation_uncompressed.tif")
 GeoTIFF geotiff = new GeoTIFF(file)
@@ -40,18 +51,41 @@ outFormat.write(reclassifiedRaster)
 
 Layer layer = reclassifiedRaster.polygonLayer
 println layer.schema
+println layer.workspace // -> Memory Workspace
 
-layer.features.each { f ->
-    
-    println f.get("value").toString()
-    
-    if (f.get("value") < 2.0) {
-        println f.geom.toString()
-        println f.get("value").toString()
-    
-    }
+//Workspace geopkg = new GeoPackage(new File("/Users/stefan/Downloads/A_pa1.gpkg"))
+//geopkg.add(layer, "A_pa1")
+
+// Ich verstehe den Filter nicht wirklich. Warum werden nicht bestockte Fläche (value=2) kleiner 10m2 nicht gelöscht,
+// sondern zu bestockten Flächen gemacht?
+// Variante 1
+/*
+Layer layer3 = new Layer("A_pa3", layer.schema)
+layer.filter("(area(the_geom) > 10 AND value = 1) OR (value = 2 AND area(the_geom) < 10)").features.each { f -> 
+    Feature feat = new Feature(f.attributes, f.id, f.schema)
+    if (f.get("value") == 2 && f.geom.area < 10) {
+        feat.set("value", 1)
+    } 
+    layer3.add(feat)
 }
+Workspace geopkg3 = new GeoPackage(new File("/Users/stefan/Downloads/A_pa3.gpkg"))
+geopkg3.add(layer3, "A_pa3")
+*/
 
-// test: layer to file?
+// Variante 2
+Filter filter = new Filter("(area(the_geom) > 10 AND value = 1) OR (value = 2 AND area(the_geom) < 10)")
+Layer layer3 = layer.filter(filter)
+layer3.update(new Field("value", "double"), 1, new Filter("area(the_geom) < 10 AND value = 2")) 
+
+Workspace geopkg3 = new GeoPackage(new File("/Users/stefan/Downloads/A_pa3_v2.gpkg"))
+geopkg3.add(layer3, "A_pa3_v2")
+
+Geometry g = (Geometry)layer3.getFeatures().get(0).geom
+
+
+//Directory workspace = Shapefile.dump(new File("/Users/stefan/Downloads"), layer)
+
+//Workspace geopkg = new GeoPackage(new File("/Users/stefan/Downloads/A_pa1.gpkg"))
+//geopkg.add(layer, "A_pa1")
 
 println("Hallo Welt.")
