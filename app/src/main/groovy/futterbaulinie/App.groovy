@@ -61,8 +61,6 @@ for (tile in tiles) {
     Layer layer = reclassifiedRaster.polygonLayer    
     Workspace geopkg = new GeoPackage(Paths.get(directory, tile + "_step02.gpkg").toFile())
     geopkg.add(layer, tile)
- 
-    
     
     Filter filter = new Filter("(area(the_geom) > 10 AND value = 1) OR (value = 2 AND area(the_geom) < 10)")
     Layer layer3 = layer.filter(new Filter("(area(the_geom) > 10 AND value = 1) OR (value = 2 AND area(the_geom) < 10)"))
