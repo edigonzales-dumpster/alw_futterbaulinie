@@ -1,3 +1,5 @@
+data/*.tif
+.vagrant/
 app/.groovy
 
 # Created by https://www.toptal.com/developers/gitignore/api/maven,gradle,eclipse,intellij+all,netbeans,java,groovy,windows,linux,macos

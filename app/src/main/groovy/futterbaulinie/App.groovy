@@ -13,7 +13,15 @@ import geoscript.layer.Shapefile
 import geoscript.workspace.Directory
 import geoscript.workspace.GeoPackage
 import geoscript.workspace.Workspace
+import org.gdal.gdal.TranslateOptions
+
 import java.nio.file.Paths
+import java.nio.file.Files
+
+import org.gdal.gdal.Band;
+import org.gdal.gdal.Dataset;
+import org.gdal.gdal.gdal;
+import org.gdal.gdalconst.gdalconstJNI;
 
 /*
 class App {
@@ -27,11 +35,6 @@ class App {
 }
 */
 
-//Bemerkungen:
-// - 32bit und predictor=2 funktioniert nicht
-// - Reclassify: value=0 wird als nodata interpretiert?
-// - Namen von Shapefiles? Es wird der Name des Schemas (read-only) verwendet.
-// - Shapefile.dump() wird in QGIS nicht angezeigt. fid missing?
 
 def directory = "/Users/stefan/Downloads/"
 
@@ -41,6 +44,97 @@ def tiles = [
     "2594000_1230500_vegetation_uncompressed"
     ]
 
+
+gdal.AllRegister()
+gdal.UseExceptions()
+
+println("Running against GDAL " + gdal.VersionInfo())
+
+Dataset dataset = gdal.Open("/vagrant/data/2594500_1230000_vegetation.tif", gdalconstJNI.GA_ReadOnly_get());
+Vector<String> optionsVector = new Vector<>();
+optionsVector.add("-co");
+optionsVector.add("TILED=TRUE");
+gdal.Translate("/vagrant/data/fubar2.tif", dataset, new TranslateOptions(optionsVector))
+
+/*
+GeoTiffReader reader = new GeoTiffReader(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"));
+GeneralEnvelope envelope = reader.getOriginalEnvelope();
+reader.dispose();
+*/
+
+
+//File inputFile = new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif");
+//BufferedImage image = javax.imageio.ImageIO.read(inputFile);
+
+
+//javax.imageio.ImageIO.write(image, "TIFF", new File("/Users/stefan/Downloads/fubar.tif"));
+
+//TiffImageParser tip = new TiffImageParser();
+//BufferedImage img = tip.getBufferedImage(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"), null);
+//
+//System.out.println(img.getColorModel().getColorSpace().getType());
+
+/*
+ColorTools colorTools = new ColorTools();
+ColorSpace cs = ColorSpace.getInstance(ColorSpace.TYPE_CCLR);
+BufferedImage img2 = colorTools.convertToColorSpace(img, cs);
+*/
+
+
+
+
+//HashMap params = new HashMap();
+//params.put(ImagingConstants.PARAM_KEY_COMPRESSION, TiffTagConstants.COMPRESSION_VALUE_UNCOMPRESSED)
+//Imaging.writeImage(img2, new File("/Users/stefan/Downloads/fubar.tif"), ImageFormats.TIFF, params);
+
+/*
+GridCoverage2D gc = (GridCoverage2D) reader.read(null);
+
+
+System.out.println(envelope.toString());
+
+GeoTiffWriter writer = new GeoTiffWriter(new File("/Users/stefan/Downloads/fubar.tif"));
+writer.write(gc);
+*/
+
+//byte[] bytes = Files.readAllBytes(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif").toPath());
+//InputStream is = new ByteArrayInputStream(bytes);
+//BufferedImage newBi = ImageIO.read(is);
+
+
+//InputStream is = new FileInputStream(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"));
+/*
+ImageReader reader = ImageIO.getImageReadersByFormatName("tiff").next();
+ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(currentContent));
+reader.setInput(iis);
+//get the first image metadata
+TIFFImageMetadata metadata = reader.getImageMetadata(0);
+*/
+
+//IIOMetadata m = reader.getImageMetadata(0);
+//org.w3c.dom.Node root = m.getAsTree(m.getNativeMetadataFormatName());
+//org.w3c.dom.Node n = root.getFirstChild();
+//while (n != null ) {
+//    System.out.println(n.getNodeName());
+//    n = n.getNextSibling();
+//}
+
+/*
+System.out.println(metadata.getProjection());
+
+GeoTiffIIOMetadataDecoder decoder = new GeoTiffIIOMetadataDecoder(metadata);
+System.out.println(decoder.hasGeoKey())
+
+Collection<GeoKeyEntry> geoKeys = decoder.getGeoKeys()
+
+System.out.println(geoKeys.getAt(2).toString());
+
+//display available format names
+System.out.println(Arrays.asList(metadata.getMetadataFormatNames()));
+*/
+
+
+/*
 for (tile in tiles) {
     println "Processing: " + tile
     
@@ -70,7 +164,7 @@ for (tile in tiles) {
     geopkg3.add(layer3, tile)
     
 }
-    
+*/
     
 
 //File file = new File("/Users/stefan/Downloads/2594000_1230000_vegetation_uncompressed.tif")
