@@ -28,7 +28,7 @@ import groovy.xml.XmlParser
 // Read (gdal) VRT file to get a list of all tif files.
 def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
 def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
-    it.SourceFilename.text()
+    it.SourceFilename.text().reverse().drop(4).reverse()
 }
 println tiles
 
