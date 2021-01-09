@@ -23,116 +23,33 @@ import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstJNI;
 
-/*
-class App {
-    String getGreeting() {
-        return 'Hello World!'
-    }
+import groovy.xml.XmlParser
 
-    static void main(String[] args) {
-        println new App().greeting        
-    }
+// Read (gdal) VRT file to get a list of all tif files.
+def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
+def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
+    it.SourceFilename.text()
 }
-*/
-
+println tiles
 
 def directory = "/Users/stefan/Downloads/"
 
-def tiles = [
-    "2594000_1230000_vegetation_uncompressed",
-    "2594500_1230000_vegetation_uncompressed",
-    "2594000_1230500_vegetation_uncompressed"
-    ]
+//def tiles = [
+//    "2594000_1230000_vegetation_uncompressed",
+//    "2594500_1230000_vegetation_uncompressed",
+//    "2594000_1230500_vegetation_uncompressed"
+//    ]
 
-
+// Uncompress tif file since geotools/geoscript cannot handle 32bit and deflate/predictor compressed files.
 gdal.AllRegister()
 gdal.UseExceptions()
-
 println("Running against GDAL " + gdal.VersionInfo())
 
 Dataset dataset = gdal.Open("/vagrant/data/2594500_1230000_vegetation.tif", gdalconstJNI.GA_ReadOnly_get());
 Vector<String> optionsVector = new Vector<>();
 optionsVector.add("-co");
 optionsVector.add("TILED=TRUE");
-gdal.Translate("/vagrant/data/fubar2.tif", dataset, new TranslateOptions(optionsVector))
-
-/*
-GeoTiffReader reader = new GeoTiffReader(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"));
-GeneralEnvelope envelope = reader.getOriginalEnvelope();
-reader.dispose();
-*/
-
-
-//File inputFile = new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif");
-//BufferedImage image = javax.imageio.ImageIO.read(inputFile);
-
-
-//javax.imageio.ImageIO.write(image, "TIFF", new File("/Users/stefan/Downloads/fubar.tif"));
-
-//TiffImageParser tip = new TiffImageParser();
-//BufferedImage img = tip.getBufferedImage(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"), null);
-//
-//System.out.println(img.getColorModel().getColorSpace().getType());
-
-/*
-ColorTools colorTools = new ColorTools();
-ColorSpace cs = ColorSpace.getInstance(ColorSpace.TYPE_CCLR);
-BufferedImage img2 = colorTools.convertToColorSpace(img, cs);
-*/
-
-
-
-
-//HashMap params = new HashMap();
-//params.put(ImagingConstants.PARAM_KEY_COMPRESSION, TiffTagConstants.COMPRESSION_VALUE_UNCOMPRESSED)
-//Imaging.writeImage(img2, new File("/Users/stefan/Downloads/fubar.tif"), ImageFormats.TIFF, params);
-
-/*
-GridCoverage2D gc = (GridCoverage2D) reader.read(null);
-
-
-System.out.println(envelope.toString());
-
-GeoTiffWriter writer = new GeoTiffWriter(new File("/Users/stefan/Downloads/fubar.tif"));
-writer.write(gc);
-*/
-
-//byte[] bytes = Files.readAllBytes(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif").toPath());
-//InputStream is = new ByteArrayInputStream(bytes);
-//BufferedImage newBi = ImageIO.read(is);
-
-
-//InputStream is = new FileInputStream(new File("/Users/stefan/Downloads/2594000_1230000_vegetation.tif"));
-/*
-ImageReader reader = ImageIO.getImageReadersByFormatName("tiff").next();
-ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(currentContent));
-reader.setInput(iis);
-//get the first image metadata
-TIFFImageMetadata metadata = reader.getImageMetadata(0);
-*/
-
-//IIOMetadata m = reader.getImageMetadata(0);
-//org.w3c.dom.Node root = m.getAsTree(m.getNativeMetadataFormatName());
-//org.w3c.dom.Node n = root.getFirstChild();
-//while (n != null ) {
-//    System.out.println(n.getNodeName());
-//    n = n.getNextSibling();
-//}
-
-/*
-System.out.println(metadata.getProjection());
-
-GeoTiffIIOMetadataDecoder decoder = new GeoTiffIIOMetadataDecoder(metadata);
-System.out.println(decoder.hasGeoKey())
-
-Collection<GeoKeyEntry> geoKeys = decoder.getGeoKeys()
-
-System.out.println(geoKeys.getAt(2).toString());
-
-//display available format names
-System.out.println(Arrays.asList(metadata.getMetadataFormatNames()));
-*/
-
+//gdal.Translate("/vagrant/data/fubar2.tif", dataset, new TranslateOptions(optionsVector))
 
 /*
 for (tile in tiles) {
@@ -165,13 +82,13 @@ for (tile in tiles) {
     
 }
 */
-    
+
+println("Hallo Welt.")
 
 //File file = new File("/Users/stefan/Downloads/2594000_1230000_vegetation_uncompressed.tif")
 //GeoTIFF geotiff = new GeoTIFF(file)
 //Raster raster = geotiff.read("2594000_1230000_vegetation_uncompressed")
 //
-//// value 0 ist nicht gut, wird als NULL/nodata interpretiert?
 //Raster reclassifiedRaster = raster.reclassify([
 //    [min:-9999, max:-9999, value: 2],
 //    [min:-9999, max:0,     value: 2],
@@ -222,4 +139,15 @@ for (tile in tiles) {
 ////Workspace geopkg = new GeoPackage(new File("/Users/stefan/Downloads/A_pa1.gpkg"))
 ////geopkg.add(layer, "A_pa1")
 
-println("Hallo Welt.")
+
+/*
+class App {
+    String getGreeting() {
+        return 'Hello World!'
+    }
+
+    static void main(String[] args) {
+        println new App().greeting
+    }
+}
+*/
