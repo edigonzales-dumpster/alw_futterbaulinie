@@ -31,25 +31,25 @@ def RECLASSIFIED_VECTOR_FILTERED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulini
 def RECLASSIFIED_VECTOR_FILTERED_DISSOLVED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified_vector_filtered_dissolved/"
 
 // Read (gdal) VRT file to get a list of all tif files.
-//def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
-//def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
-//    it.SourceFilename.text().reverse().drop(4).reverse()
-//}
+def vrt = new groovy.xml.XmlParser().parse("/vagrant/data/vegetation.vrt")
+def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
+    it.SourceFilename.text().reverse().drop(4).reverse()
+}
 
 def directory = "/Users/stefan/Downloads/"
 
-def tiles = [
-    "2594000_1230000_vegetation",
-    "2594500_1230000_vegetation",
-    "2594000_1230500_vegetation"
-    ]
+//def tiles = [
+//    "2594000_1230000_vegetation",
+//    "2594500_1230000_vegetation",
+//    "2594000_1230500_vegetation"
+//    ]
 
 // Uncompress tif file since geotools/geoscript cannot handle 32bit and deflate/predictor compressed files.
 gdal.AllRegister()
 gdal.UseExceptions()
 println("Running against GDAL " + gdal.VersionInfo())
 
-DOWNLOAD_FOLDER = "/vagrant/data/"
+//DOWNLOAD_FOLDER = "/vagrant/data/"
 for (tile in tiles) {
     println "Uncompressing: " + tile
     if (new File(TILES_FOLDER, tile + ".tif").exists()) new File(TILES_FOLDER, tile + ".tif").delete()
@@ -58,8 +58,9 @@ for (tile in tiles) {
     optionsVector.add("-co");
     optionsVector.add("TILED=TRUE");
     gdal.Translate(Paths.get(TILES_FOLDER, tile + ".tif").toFile().getAbsolutePath(), dataset, new TranslateOptions(optionsVector))
+    dataset.delete()
 }
-
+gdal.GDALDestroyDriverManager();
 
 for (tile in tiles) {
     println "Processing: " + tile
