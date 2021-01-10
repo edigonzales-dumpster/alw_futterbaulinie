@@ -16,4 +16,13 @@ Code Completion ist käsig. Ich habe unter Preferences - Java - Editor - Content
 Viel weniger käsig.
 
 
+### Snippets
 
+Download files
+```
+tiles.each {tile ->
+    Paths.get(DOWNLOAD_FOLDER, tile + ".tif").toFile().withOutputStream {out ->
+        out << new URL(DOWNLOAD_URL + tile + ".tif").openStream()
+    }
+}
+```

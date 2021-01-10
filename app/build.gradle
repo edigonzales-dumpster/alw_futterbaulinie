@@ -39,4 +39,4 @@ application {
     mainClass = 'futterbaulinie.App'
 }
 
-applicationDefaultJvmArgs = ["-Djava.library.path=/usr/lib/jni/"]
+applicationDefaultJvmArgs = ["-Djava.library.path=/usr/lib/jni/", "-Djava.awt.headless=true"]

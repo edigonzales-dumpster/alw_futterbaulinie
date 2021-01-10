@@ -28,39 +28,66 @@ import groovy.xml.XmlParser
 def DOWNLOAD_FOLDER = "/Volumes/Samsung_T5/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
 def DOWNLOAD_URL = "https://geo.so.ch/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
 
+def TILES_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/uncompressed/"
+def RECLASSIFIED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified/"
+
 // Read (gdal) VRT file to get a list of all tif files.
-def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
-def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
-    it.SourceFilename.text().reverse().drop(4).reverse()
-}
-println tiles
-
-tiles.each {tile ->
-    Paths.get(DOWNLOAD_FOLDER, tile + ".tif").toFile().withOutputStream {out ->
-        out << new URL("https://geo.so.ch/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"+tile+".tif").openStream()
-    }
-}
-
-
+//def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
+//def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
+//    it.SourceFilename.text().reverse().drop(4).reverse()
+//}
 
 def directory = "/Users/stefan/Downloads/"
 
-//def tiles = [
-//    "2594000_1230000_vegetation_uncompressed",
-//    "2594500_1230000_vegetation_uncompressed",
-//    "2594000_1230500_vegetation_uncompressed"
-//    ]
+def tiles = [
+    "2594000_1230000_vegetation",
+    "2594500_1230000_vegetation",
+    "2594000_1230500_vegetation"
+    ]
 
 // Uncompress tif file since geotools/geoscript cannot handle 32bit and deflate/predictor compressed files.
 gdal.AllRegister()
 gdal.UseExceptions()
 println("Running against GDAL " + gdal.VersionInfo())
 
-Dataset dataset = gdal.Open("/vagrant/data/2594500_1230000_vegetation.tif", gdalconstJNI.GA_ReadOnly_get());
-Vector<String> optionsVector = new Vector<>();
-optionsVector.add("-co");
-optionsVector.add("TILED=TRUE");
-//gdal.Translate("/vagrant/data/fubar2.tif", dataset, new TranslateOptions(optionsVector))
+DOWNLOAD_FOLDER = "/vagrant/data/"
+for (tile in tiles) {
+    println "Uncompressing: " + tile
+    if (new File(TILES_FOLDER, tile + ".tif").exists()) new File(TILES_FOLDER, tile + ".tif").delete()
+    Dataset dataset = gdal.Open(DOWNLOAD_FOLDER + tile + ".tif", gdalconstJNI.GA_ReadOnly_get());
+    Vector<String> optionsVector = new Vector<>();
+    optionsVector.add("-co");
+    optionsVector.add("TILED=TRUE");
+    gdal.Translate(Paths.get(TILES_FOLDER, tile + ".tif").toFile().getAbsolutePath(), dataset, new TranslateOptions(optionsVector))
+}
+
+
+for (tile in tiles) {
+    println "Processing: " + tile
+
+    // Raster wird umklassiert:
+    // - Bestockt ja/nein.
+    // - Tiefe Bestockung (<2m) wird als zu unbestockt umklassiert.
+    println "Reclassify raster..."
+    File file = Paths.get(TILES_FOLDER, tile + ".tif").toFile()
+    GeoTIFF geotiff = new GeoTIFF(file)
+    Raster raster = geotiff.read(tile)
+
+    Raster reclassifiedRaster = raster.reclassify([
+            [min:-9999, max:-9999, value: 2],
+            [min:-9999, max:0,     value: 2],
+            [min:0,     max:2,     value: 2],
+            [min:2,     max:200,   value: 1]
+    ])
+
+    File outFile = Paths.get(RECLASSIFIED_FOLDER, tile + ".tif").toFile()
+    Format outFormat = Format.getFormat(outFile)
+    outFormat.write(reclassifiedRaster)
+
+    // Vektorisierung des Rasters
+}
+
+
 
 /*
 for (tile in tiles) {
