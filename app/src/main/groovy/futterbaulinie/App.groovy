@@ -2,34 +2,33 @@ package futterbaulinie
 
 import geoscript.feature.Feature
 import geoscript.feature.Field
-import geoscript.filter.Filter
+import geoscript.feature.Schema
 import geoscript.geom.Geometry
-import geoscript.geom.Point
+import geoscript.geom.MultiPolygon
 import geoscript.layer.Format
 import geoscript.layer.GeoTIFF
 import geoscript.layer.Layer
 import geoscript.layer.Raster
-import geoscript.layer.Shapefile
-import geoscript.workspace.Directory
+import geoscript.filter.Filter
 import geoscript.workspace.GeoPackage
+import geoscript.workspace.Memory
 import geoscript.workspace.Workspace
 import org.gdal.gdal.TranslateOptions
 
 import java.nio.file.Paths
-import java.nio.file.Files
 
-import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
-import org.gdal.gdalconst.gdalconstJNI;
-
-import groovy.xml.XmlParser
+import org.gdal.gdalconst.gdalconstJNI
 
 def DOWNLOAD_FOLDER = "/Volumes/Samsung_T5/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
 def DOWNLOAD_URL = "https://geo.so.ch/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
 
 def TILES_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/uncompressed/"
-def RECLASSIFIED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified/"
+def RECLASSIFIED_RASTER_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified/"
+def RECLASSIFIED_VECTOR_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified_vector/"
+def RECLASSIFIED_VECTOR_FILTERED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified_vector_filtered/"
+def RECLASSIFIED_VECTOR_FILTERED_DISSOLVED_FOLDER = "/Volumes/Samsung_T5/alw_futterbaulinie/reclassified_vector_filtered_dissolved/"
 
 // Read (gdal) VRT file to get a list of all tif files.
 //def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
@@ -80,12 +79,71 @@ for (tile in tiles) {
             [min:2,     max:200,   value: 1]
     ])
 
-    File outFile = Paths.get(RECLASSIFIED_FOLDER, tile + ".tif").toFile()
+    File outFile = Paths.get(RECLASSIFIED_RASTER_FOLDER, tile + ".tif").toFile()
     Format outFormat = Format.getFormat(outFile)
     outFormat.write(reclassifiedRaster)
 
     // Vektorisierung des Rasters
+    Layer layer = reclassifiedRaster.polygonLayer
+//    Workspace geopkg = new GeoPackage(Paths.get(RECLASSIFIED_VECTOR_FOLDER, tile + ".gpkg").toFile())
+//    geopkg.add(layer, tile)
+
+    // Bestockte Flächen <10m werden ignoriert.
+    // Unbestockte Flächen <10 werden zu bestockten Flächen. Annahme: Es handelt sich um kleiner Löcher grösseren
+    // bestockten Flächen.
+    Filter filter = new Filter("(area(the_geom) > 10 AND value = 1) OR (value = 2 AND area(the_geom) < 10)")
+    Layer filteredLayer = layer.filter(filter)
+    filteredLayer.update(new Field("value", "double"), 1, new Filter("area(the_geom) < 10 AND value = 2"))
+
+//    Workspace geopkg = new GeoPackage(Paths.get(RECLASSIFIED_VECTOR_FILTERED_FOLDER, tile + ".gpkg").toFile())
+//    geopkg.add(filteredLayer, tile)
+
+
+    // Geometrien dissolven.
+    // CascadedUnion ist x-fach schneller und liefert korrekte Resultate.
+    List<Geometry> geometries = filteredLayer.features.collect{ f -> f.geom }
+    Geometry unionedGeometry = Geometry.cascadedUnion(geometries)
+
+    Schema schema = new Schema("dummy", "geom:Polygon:srid=2056,id:String,value:Double")
+
+    // TODO:
+    // Keinen Memory-Workspace machen, sondern was Persistierendes.
+    // Mit dem dann auch ganz am Ende nochmals cascade union.
+    // Oder prüfen, ob GPGK existiert. Falls ja wird der Layer als "resultLayer" verwendet.
+
+
+    Workspace workspace = new Memory()
+    Layer dissolvedLayer = workspace.create(schema);
+
+    if (unionedGeometry instanceof MultiPolygon) {
+        List<Feature> featureList = unionedGeometry.geometries.collect {geom ->
+            def uuid = UUID.randomUUID().toString()
+            Feature feature = new Feature([
+                    geom,
+                    uuid,
+                    1.0,
+            ], uuid, schema)
+            return feature
+        }
+        dissolvedLayer.add(featureList)
+    } else {
+        def uuid = UUID.randomUUID().toString()
+        Feature feature = new Feature([
+                unionedGeometry,
+                uuid,
+                1.0,
+        ], uuid, schema)
+        dissolvedLayer.add(feature)
+    }
+
+    Workspace geopkg = new GeoPackage(Paths.get(RECLASSIFIED_VECTOR_FILTERED_DISSOLVED_FOLDER, tile + ".gpkg").toFile())
+    geopkg.add(dissolvedLayer, tile)
 }
+
+
+
+// function: export gpkg. dir=random. output text als parameter.
+
 
 
 

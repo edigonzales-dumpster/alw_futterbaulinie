@@ -6,6 +6,7 @@
 - Reclassify: value=0 wird als nodata interpretiert? (Ich glaube, ich habe zufälligerweise was im Code dazu gesehen.)
 - Namen von Shapefiles? Es wird der Name des Schemas (welcher read-only ist) verwendet.
 - Shapefile.dump() wird in QGIS nicht angezeigt. fid missing?
+- layer.dissolve() geht sehr lange und liefert teilweise ganz krude Geometrien zurück. -> Bug melden mit Beispiel
 
 ## Develop
 
