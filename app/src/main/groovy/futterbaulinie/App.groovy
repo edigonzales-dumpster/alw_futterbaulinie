@@ -25,12 +25,23 @@ import org.gdal.gdalconst.gdalconstJNI;
 
 import groovy.xml.XmlParser
 
+def DOWNLOAD_FOLDER = "/Volumes/Samsung_T5/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
+def DOWNLOAD_URL = "https://geo.so.ch/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"
+
 // Read (gdal) VRT file to get a list of all tif files.
 def vrt = new XmlParser().parse("/vagrant/data/vegetation.vrt")
 def tiles = vrt.VRTRasterBand[0].ComplexSource.collect { it ->
     it.SourceFilename.text().reverse().drop(4).reverse()
 }
 println tiles
+
+tiles.each {tile ->
+    Paths.get(DOWNLOAD_FOLDER, tile + ".tif").toFile().withOutputStream {out ->
+        out << new URL("https://geo.so.ch/geodata/ch.so.agi.lidar_2019.ndsm_vegetation/"+tile+".tif").openStream()
+    }
+}
+
+
 
 def directory = "/Users/stefan/Downloads/"
 
