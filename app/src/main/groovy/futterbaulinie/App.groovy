@@ -45,11 +45,13 @@ def directory = "/Users/stefan/Downloads/"
 //    ]
 
 // Uncompress tif file since geotools/geoscript cannot handle 32bit and deflate/predictor compressed files.
+// Muss einmal gemacht werden.
 gdal.AllRegister()
 gdal.UseExceptions()
 println("Running against GDAL " + gdal.VersionInfo())
 
 //DOWNLOAD_FOLDER = "/vagrant/data/"
+/*
 for (tile in tiles) {
     println "Uncompressing: " + tile
     if (new File(TILES_FOLDER, tile + ".tif").exists()) new File(TILES_FOLDER, tile + ".tif").delete()
@@ -60,7 +62,7 @@ for (tile in tiles) {
     gdal.Translate(Paths.get(TILES_FOLDER, tile + ".tif").toFile().getAbsolutePath(), dataset, new TranslateOptions(optionsVector))
     dataset.delete()
 }
-gdal.GDALDestroyDriverManager();
+*/
 
 for (tile in tiles) {
     println "Processing: " + tile
@@ -139,6 +141,7 @@ for (tile in tiles) {
 
     Workspace geopkg = new GeoPackage(Paths.get(RECLASSIFIED_VECTOR_FILTERED_DISSOLVED_FOLDER, tile + ".gpkg").toFile())
     geopkg.add(dissolvedLayer, tile)
+    geopkg.close() //?
 }
 
 
